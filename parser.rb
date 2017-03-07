@@ -1,124 +1,165 @@
+require 'pp'
+require './parser_util'
+require './tokenizer'
 
-class Parser
+class Parser < ParserUtil
 
-  class RuleDefineEvalEnv < Object
-    attr_reader :matches
+  rule :program do
+    match :eof do
+      []
+    end
 
-    def match *tokens, &block
-      @matches ||= {}
-      @matches[tokens] = block
-      @matches
+    match :function_definition, :program do
+      @program.unshift @function_definition
     end
   end
 
-  class MatchedEvalEnv < Object
-    def initialize(tokens, matched)
-      tokens.zip(matched).each do |name, value|
-        next unless name.is_a? Symbol
-        instance_variable_set("@#{name}", value)
-      end
-      @matched = matched
-    end
-
-    def matched
-      @matched
+  rule :function_definition do
+    match :type, :iden, :formal_params, :block do
+      [:define_func, @type[1], @iden[1], @formal_params, @block]
     end
   end
 
-  class << self
-    attr_reader :rules
-
-    def rule name, **options, &block
-      @rules ||= {}
-      @rules[name] = RuleDefineEvalEnv.new.instance_eval(&block)
-      #check_left_recursion(name, @rules[name])
+  rule :formal_params do
+    match '(', ')' do
+      []
     end
 
-    def binary_operation term_name, operator_name, factor_name
-      tail_name = "#{term_name}_tail".to_sym
-      rule term_name do
-        match factor_name, tail_name do
-          instance_variable_get("@#{tail_name}").call(instance_variable_get("@#{factor_name}"))
-        end
-      end
-
-      rule tail_name do |params|
-        match operator_name, factor_name, tail_name do
-          ->(n){ instance_variable_get("@#{tail_name}").call [instance_variable_get("@#{operator_name}")[1], n, instance_variable_get("@#{factor_name}")] }
-        end
-
-        match :empty do
-          ->(n){ n }
-        end
-      end
-    end
-
-    def check_left_recursion(rule_name, rule)
-      p rule.keys.any?{|x| x.first == rule_name}
+    match '(', :type, :iden, :formal_params_tail do
+      @formal_params_tail.unshift [@type[1], @iden[1]]
     end
   end
 
-  def rules
-    self.class.rules
-  end
+  rule :formal_params_tail do
+    match ')' do
+      []
+    end
 
-  def parse(tokens)
-    @tokens = tokens
-    @index = 0
-    result = match_rule @start_rule
-    if @index == @tokens.size
-      result
-    else
-      puts "Warning: not consumming all tokens, may have syntax error"
-      result
+    match ',', :type, :iden, :formal_params_tail do
+      @formal_params_tail.unshift [@type[1], @iden[1]]
     end
   end
 
-  def initialize start_rule = :program
-    @start_rule = start_rule
-  end
-
-  def match_rule rule_name
-    result = false
-    rules[rule_name].each do |tokens, block|
-      if result = match_rule_line(*tokens, block)
-        return result
-      end
+  rule :variable_definition do
+    match :type, :iden, :assignment_operator, :expression do
+      [:define_var, @type[1], @iden[1], @expression]
     end
-    return false
-  end
 
-  def match_rule_line *tokens, block
-    #p "matching #{tokens}"
-    #p "current_token #{@tokens[@index]}"
-    old_index = @index
-    line_result = tokens.map do |token|
-      if rules[token]
-        rule_result = match_rule(token)
-        if rule_result
-          rule_result
-        else
-          return false
-        end
-      elsif token == :empty
-        nil
-      else
-        if current_token == token
-          @index += 1
-          @tokens[@index-1]
-        else
-          @index = old_index
-          return false
-        end
-      end
+    match :type, :iden do
+      [:define_var, @type[1], @iden[1]]
     end
-    MatchedEvalEnv.new(tokens, line_result).instance_eval(&block)
   end
 
-  def current_token
-    @tokens[@index][0]
-  rescue
-    :empty
+  rule :type do
+    match :iden do
+      [:type, @iden[1]]
+    end
   end
+
+  rule :block do
+    match '{', :statement, :block_tail do
+      @block_tail.unshift @statement
+    end
+  end
+
+  rule :block_tail do
+    match '}' do
+      []
+    end
+
+    match :statement, :block_tail do
+      @block_tail.unshift @statement
+    end
+  end
+
+  rule :statement do
+    match :return, :expression, ';' do
+      ['return', @expression]
+    end
+
+    match :if, '(', :expression, ')', :block, :else, :block do
+      [:if, @expression, matched[4], matched[6]]
+    end
+
+    match :if, '(', :expression, ')', :block do
+      [:if, @expression, @block]
+    end
+
+    match :variable_definition, ';' do
+      @variable_definition
+    end
+
+    match :expression, ';' do
+      @expression
+    end
+  end
+
+  rule :expression do
+    match :assignment_expression do
+      @assignment_expression
+    end
+
+    match :assignment do
+      @assignment
+    end
+  end
+
+  rule :factor do
+    match '(', :expression, ')' do
+      @expression
+    end
+
+    match :number do
+      @number[1]
+    end
+
+    match :int do
+      [:int, @int[1].to_i]
+    end
+
+    match :function_call do
+      @function_call
+    end
+
+    match :iden do
+      [:get, @iden[1]]
+    end
+
+  end
+
+  rule :function_call do
+    match :iden, '(', ')' do
+      [:call, @iden[1], []]
+    end
+
+    match :iden, '(', :actual_params, ')' do
+      [:call, @iden[1], @actual_params]
+    end
+  end
+
+  rule :actual_params do
+    match :expression, :actual_params_tail do
+      @actual_params_tail.unshift @expression
+    end
+  end
+
+  rule :actual_params_tail do
+    match ',', :expression, :actual_params_tail do
+      @actual_params_tail.unshift @expression
+    end
+
+    match :empty do
+      []
+    end
+  end
+
+  binary_operation :assignment_expression, :assignment_operator, :relational_expression
+  binary_operation :relational_expression, :relational_operator, :additive_expression
+  binary_operation :additive_expression, :additive_operator, :multiplicative_expression
+  binary_operation :multiplicative_expression, :multiplicative_operator, :factor
 
 end
+
+code = File.open('test/factorial.c').read
+tokens = Tokenizer.new.tokenize(code)
+#pp Parser.new.parse(tokens)
