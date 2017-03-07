@@ -19,12 +19,8 @@ class TinyCParser < Parser
   end
 
   rule :expr_tail do
-    match '+', :term, :expr_tail do
-      ->(n){ @expr_tail.call ['+', n, @term] }
-    end
-
-    match '-', :term, :expr_tail do
-      ->(n){ @expr_tail.call ['-', n, @term] }
+    match :additive_operator, :term, :expr_tail do
+      ->(n){ @expr_tail.call [@additive_operator[1], n, @term] }
     end
 
     match :empty do
@@ -38,13 +34,9 @@ class TinyCParser < Parser
     end
   end
 
-  rule :term_tail, empty: true do |params|
-    match '*', :factor, :term_tail do
-      ->(n){ @term_tail.call ['*', n, @factor] }
-    end
-
-    match '/', :factor, :term_tail do
-      ->(n){ @term_tail.call ['/', n, @factor] }
+  rule :term_tail do |params|
+    match :multiplicative_operator, :factor, :term_tail do
+      ->(n){ @term_tail.call [@multiplicative_operator[1], n, @factor] }
     end
 
     match :empty do
@@ -54,5 +46,5 @@ class TinyCParser < Parser
 
 end
 
-tokens = [[:number, 1], ["+"], [:number, 2], ["*"], [:number, 3], ["/"], ["("], [:number, 4], ["-"], [:number, 2], [")"]]
+tokens = [[:number, 1], [:additive_operator, "+"], [:number, 2], [:multiplicative_operator, "*"], [:number, 3], [:multiplicative_operator, "/"], ["("], [:number, 4], [:additive_operator, "-"], [:number, 2], [")"]]
 p TinyCParser.new(:expr).parse(tokens)

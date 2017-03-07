@@ -31,6 +31,30 @@ class Parser
     def rule name, **options, &block
       @rules ||= {}
       @rules[name] = RuleDefineEvalEnv.new.instance_eval(&block)
+      #check_left_recursion(name, @rules[name])
+    end
+
+    def binary_operation term_name, operator, factor_name
+      tail_name = "#{term_name}_tail".to_sym
+      rule term_name do
+        match factor_name, tail_name do
+          instance_variable_get("@#{tail_name}").call(instance_variable_get("@#{factor_name}"))
+        end
+      end
+
+      rule tail_name do |params|
+        match operator_name, factor_name, tail_name do
+          ->(n){ instance_variable_get("@#{tail_name}").call [instance_variable_get("@#{operator_name}")[1], n, instance_variable_get("@#{factor_name}")] }
+        end
+
+        match :empty do
+          ->(n){ n }
+        end
+      end
+    end
+
+    def check_left_recursion(rule_name, rule)
+      p rule.keys.any?{|x| x.first == rule_name}
     end
   end
 
