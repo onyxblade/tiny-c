@@ -32,12 +32,13 @@ class Tokenizer
       when ss.scan(/(==)|(!=)|(<=)|(>=)|>|</)
         tokens << [:relational_operator, ss.matched]
       when ss.scan(/=/)
-        tokens << [:assign]
+        tokens << [ss.matched]
       else
         p ss
         raise "unknown token"
       end
     end
+    tokens << [:eof]
     tokens
   end
 end

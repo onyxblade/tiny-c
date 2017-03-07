@@ -3,25 +3,49 @@ require './tokenizer'
 
 class TinyCParser < Parser
 
+  rule :program do
+    match :eof do
+      []
+    end
+
+    match :function_definition, :program do
+      @program.unshift @function_definition
+    end
+  end
+
   rule :function_definition do
-    match :type, :iden, :arguments, :block do
-      [:function_definition, @type, @iden, @arguments, @block]
+    match :type, :iden, :formal_params, :block do
+      [:function_definition, @type, @iden, @formal_params, @block]
     end
   end
 
-  rule :arguments do
-    match '(', :type, :iden, :arguments_tail do
-      @arguments_tail.unshift [@type, @iden]
+  rule :formal_params do
+    match '(', ')' do
+      []
+    end
+
+    match '(', :type, :iden, :formal_params_tail do
+      @formal_params_tail.unshift [@type, @iden]
     end
   end
 
-  rule :arguments_tail do
+  rule :formal_params_tail do
     match ')' do
       []
     end
 
-    match ',', :type, :iden, :arguments_tail do
-      @arguments_tail.unshift [@type, @iden]
+    match ',', :type, :iden, :formal_params_tail do
+      @formal_params_tail.unshift [@type, @iden]
+    end
+  end
+
+  rule :variable_definition do
+    match :type, :iden, '=', :expression do
+      [:variable_definition, @type, @iden, @expression]
+    end
+
+    match :type, :iden do
+      [:variable_definition, @type, @iden]
     end
   end
 
@@ -58,6 +82,10 @@ class TinyCParser < Parser
 
     match :if, '(', :expression, ')', :block do
       [:if, @expression, @block]
+    end
+
+    match :variable_definition, ';' do
+      @variable_definition
     end
 
     match :expression, ';' do
@@ -105,6 +133,10 @@ class TinyCParser < Parser
   end
 
   rule :function_call do
+    match :iden, '(', ')' do
+      [:call, @iden, []]
+    end
+
     match :iden, '(', :actual_params, ')' do
       [:call, @iden, @actual_params]
     end
@@ -134,4 +166,4 @@ end
 
 code = File.open('test/factorial.c').read
 tokens = Tokenizer.new.tokenize(code)
-p TinyCParser.new(:function_definition).parse(tokens)
+p TinyCParser.new.parse(tokens)
