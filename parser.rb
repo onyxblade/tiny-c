@@ -34,7 +34,7 @@ class Parser
       #check_left_recursion(name, @rules[name])
     end
 
-    def binary_operation term_name, operator, factor_name
+    def binary_operation term_name, operator_name, factor_name
       tail_name = "#{term_name}_tail".to_sym
       rule term_name do
         match factor_name, tail_name do
