@@ -65,7 +65,13 @@ class Parser
   def parse(tokens)
     @tokens = tokens
     @index = 0
-    match_rule @start_rule
+    result = match_rule @start_rule
+    if @index == @tokens.size
+      result
+    else
+      puts "Warning: not consumming all tokens, may have syntax error"
+      result
+    end
   end
 
   def initialize start_rule = :program
@@ -79,7 +85,7 @@ class Parser
         return result
       end
     end
-    raise "pattern exhausted, current_token: #{current_token}, matching: #{rule_name}"
+    return false
   end
 
   def match_rule_line *tokens, block

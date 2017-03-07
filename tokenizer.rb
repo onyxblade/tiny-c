@@ -9,8 +9,8 @@ class Tokenizer
       case
       when ss.scan(/\s/)
         # do nothing
-      when ss.scan(/int|float|unsigned int/)
-        tokens << [:type, ss.matched]
+      #when ss.scan(/int|float|unsigned int/)
+      #  tokens << [:type, ss.matched]
       when ss.scan(/\d+/)
         tokens << [:int, ss.matched]
       when ss.scan(/\d+\.\d+/)
@@ -23,20 +23,16 @@ class Tokenizer
         tokens << [:else]
       when ss.scan(/\w+/)
         tokens << [:iden, ss.matched]
-      when ss.scan(/\(/)
-        tokens << [:left_paren]
-      when ss.scan(/\)/)
-        tokens << [:right_paren]
-      when ss.scan(/,/)
-        tokens << [:comma]
-      when ss.scan(/\{/)
-        tokens << [:left_brace]
-      when ss.scan(/\}/)
-        tokens << [:right_brace]
-      when ss.scan(/;/)
-        tokens << [:punc]
-      when ss.scan(/[\+\-\*\/(==)(<=)(>=)(!=)<>]/)
-        tokens << [:operator, ss.matched]
+      when ss.scan(/[\(\)\{\},;]/)
+        tokens << [ss.matched]
+      when ss.scan(/[\+\-]/)
+        tokens << [:additive_operator, ss.matched]
+      when ss.scan(/[\*\/]/)
+        tokens << [:multiplicative_operator, ss.matched]
+      when ss.scan(/(==)|(!=)|(<=)|(>=)|>|</)
+        tokens << [:relational_operator, ss.matched]
+      when ss.scan(/=/)
+        tokens << [:assign]
       else
         p ss
         raise "unknown token"
@@ -45,7 +41,3 @@ class Tokenizer
     tokens
   end
 end
-
-code = File.open('test/factorial.c').read
-
-p Tokenizer.new.tokenize(code)
