@@ -26,4 +26,18 @@ class TestParser < Minitest::Test
                 [["return", [:call, "factorial", [[:int, 5]]]]]]]
     assert_equal target, sexp
   end
+
+  def test_arithmetic
+    code = "1 + 2 * 3 / (4 - 2)"
+    tokens = Tokenizer.new.tokenize(code, false)
+    sexp = Parser.new(:expression).parse(tokens)
+    target =  [:call,
+               "+",
+               [[:int, 1],
+                [:call,
+                 "/",
+                 [[:call, "*", [[:int, 2], [:int, 3]]],
+                  [:call, "-", [[:int, 4], [:int, 2]]]]]]]
+    assert_equal target, sexp
+  end
 end

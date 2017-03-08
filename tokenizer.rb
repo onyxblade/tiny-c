@@ -1,7 +1,7 @@
 require 'strscan'
 
 class Tokenizer
-  def tokenize(str)
+  def tokenize(str, eof = true)
     ss = StringScanner.new(str)
     tokens = []
 
@@ -38,7 +38,7 @@ class Tokenizer
         raise "unknown token"
       end
     end
-    tokens << [:eof]
+    tokens << [:eof] if eof
     tokens
   end
 end
