@@ -9,8 +9,6 @@ class Tokenizer
       case
       when ss.scan(/\s/)
         # do nothing
-      #when ss.scan(/int|float|unsigned int/)
-      #  tokens << [:type, ss.matched]
       when ss.scan(/\d+/)
         tokens << [:int, ss.matched]
       when ss.scan(/\d+\.\d+/)
@@ -21,10 +19,18 @@ class Tokenizer
         tokens << [:if]
       when ss.scan(/else/)
         tokens << [:else]
+      when ss.scan(/for/)
+        tokens << [:for]
+      when ss.scan(/while/)
+        tokens << [:while]
       when ss.scan(/\w+/)
         tokens << [:iden, ss.matched]
+      when ss.scan(/(\+\+)|(\-\-)/)
+        tokens << [:postfix_operator, ss.matched]
       when ss.scan(/[\(\)\{\},;]/)
         tokens << [ss.matched]
+      when ss.scan(/(\+=)|(\-=)|(\*=)|(\/=)/)
+        tokens << [:assignment_operator, ss.matched]
       when ss.scan(/[\+\-]/)
         tokens << [:additive_operator, ss.matched]
       when ss.scan(/[\*\/]/)

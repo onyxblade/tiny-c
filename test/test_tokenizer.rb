@@ -53,4 +53,62 @@ class TestTokenizer < Minitest::Test
 
     assert_equal target, tokens
   end
+
+  def test_loop
+    code = File.open('loop.c').read
+    tokens = Tokenizer.new.tokenize(code)
+    target =  [[:iden, "int"],
+               [:iden, "main"],
+               ["("],
+               [")"],
+               ["{"],
+               [:iden, "int"],
+               [:iden, "i"],
+               [";"],
+               [:iden, "int"],
+               [:iden, "s"],
+               [:assignment_operator, "="],
+               [:int, "0"],
+               [";"],
+               [:for],
+               ["("],
+               [:iden, "i"],
+               [:assignment_operator, "="],
+               [:int, "0"],
+               [";"],
+               [:iden, "i"],
+               [:relational_operator, "<"],
+               [:int, "10"],
+               [";"],
+               [:iden, "i"],
+               [:postfix_operator, "++"],
+               [")"],
+               ["{"],
+               [:iden, "s"],
+               [:assignment_operator, "+="],
+               [:iden, "i"],
+               [";"],
+               ["}"],
+               [:while],
+               ["("],
+               [:iden, "i"],
+               [:relational_operator, ">"],
+               [:int, "0"],
+               [")"],
+               ["{"],
+               [:iden, "s"],
+               [:assignment_operator, "+="],
+               [:iden, "i"],
+               [";"],
+               [:iden, "i"],
+               [:postfix_operator, "--"],
+               [";"],
+               ["}"],
+               [:return],
+               [:iden, "s"],
+               [";"],
+               ["}"],
+               [:eof]]
+    assert_equal target, tokens
+  end
 end

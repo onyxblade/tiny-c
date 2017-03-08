@@ -7,14 +7,11 @@ class Interpreter
     end
 
     def define_var type, name, value = nil
-      assign name, value
+      assign name, value if value
     end
 
     def call name, arguments
       #p name, arguments
-      if name == '='
-        return assign arguments[0][1], arguments[1]
-      end
 
       evaluated = arguments.map{|x| self.eval(x)}
       if function = Interpreter::BASIC_FUNCTIONS[name]
@@ -68,8 +65,38 @@ class Interpreter
       end
     end
 
+    def for init, cond, step, body
+      self.eval init
+      evaluated = self.eval cond
+      while evaluated && evaluated != 0
+        body.each{|x| self.eval x }
+        self.eval step
+        evaluated = self.eval cond
+      end
+    end
+
+    def while cond, body
+      evaluated = self.eval cond
+      while evaluated && evaluated != 0
+        body.each{|x| self.eval x }
+        evaluated = self.eval cond
+      end
+    end
+
     def assign name, value
       @variables[name] = self.eval value
+    end
+
+    def inc name
+      prev = @variables[name]
+      @variables[name] += 1
+      prev
+    end
+
+    def dec name
+      prev = @variables[name]
+      @variables[name] -= 1
+      prev
     end
 
     def eval sexp

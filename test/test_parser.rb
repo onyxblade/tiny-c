@@ -1,6 +1,7 @@
 require "minitest/autorun"
 require '../tokenizer'
 require '../parser'
+require 'pp'
 
 class TestParser < Minitest::Test
   def test_factorial
@@ -13,8 +14,8 @@ class TestParser < Minitest::Test
                 [["int", "n"]],
                 [[:if,
                   [:call, "==", [[:get, "n"], [:int, 1]]],
-                  [["return", [:int, 1]]],
-                  [["return",
+                  [[:return, [:int, 1]]],
+                  [[:return,
                     [:call,
                      "*",
                      [[:get, "n"],
@@ -23,7 +24,7 @@ class TestParser < Minitest::Test
                 "int",
                 "main",
                 [],
-                [["return", [:call, "factorial", [[:int, 5]]]]]]]
+                [[:return, [:call, "factorial", [[:int, 5]]]]]]]
     assert_equal target, sexp
   end
 
@@ -38,6 +39,28 @@ class TestParser < Minitest::Test
                  "/",
                  [[:call, "*", [[:int, 2], [:int, 3]]],
                   [:call, "-", [[:int, 4], [:int, 2]]]]]]]
+    assert_equal target, sexp
+  end
+
+  def test_loop
+    code = File.open('loop.c').read
+    tokens = Tokenizer.new.tokenize(code)
+    sexp = Parser.new.parse(tokens)
+    target =  [[:define_func,
+                "int",
+                "main",
+                [],
+                [[:define_var, "int", "i"],
+                 [:define_var, "int", "s", [:int, 0]],
+                 [:for,
+                  [:assign, "i", [:int, 0]],
+                  [:call, "<", [[:get, "i"], [:int, 10]]],
+                  [:inc, "i"],
+                  [[:assign, "s", [:call, "+", [[:get, "s"], [:get, "i"]]]]]],
+                 [:while,
+                  [:call, ">", [[:get, "i"], [:int, 0]]],
+                  [[:assign, "s", [:call, "+", [[:get, "s"], [:get, "i"]]]], [:dec, "i"]]],
+                 [:return, [:get, "s"]]]]]
     assert_equal target, sexp
   end
 end

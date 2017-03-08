@@ -72,15 +72,23 @@ class Parser < ParserUtil
 
   rule :statement do
     match :return, :expression, ';' do
-      ['return', @expression]
+      [:return, @expression]
     end
 
     match :if, '(', :expression, ')', :block, :else, :block do
-      [:if, @expression, matched[4], matched[6]]
+      [:if, @expression, @matched[4], @matched[6]]
     end
 
     match :if, '(', :expression, ')', :block do
       [:if, @expression, @block]
+    end
+
+    match :for, '(', :expression, ';', :expression, ';', :expression, ')', :block do
+      [:for, @matched[2], @matched[4], @matched[6], @block]
+    end
+
+    match :while, '(', :expression, ')', :block do
+      [:while, @expression, @block]
     end
 
     match :variable_definition, ';' do
@@ -119,6 +127,17 @@ class Parser < ParserUtil
       @function_call
     end
 
+    match :iden, :postfix_operator do
+      case @postfix_operator[1]
+      when '++'
+        [:inc, @iden[1]]
+      when '--'
+        [:dec, @iden[1]]
+      else
+        raise "unknown postfix_operator #{@postfix_operator[1]}"
+      end
+    end
+
     match :iden do
       [:get, @iden[1]]
     end
@@ -151,7 +170,13 @@ class Parser < ParserUtil
     end
   end
 
-  binary_operation :assignment_expression, :assignment_operator, :relational_expression
+  binary_operation :assignment_expression, :assignment_operator, :relational_expression do |operator, left, right|
+    if match = operator.match(/(.)=/)
+      [:assign, left[1], [:call, match[1], [left, right]]]
+    else
+      [:assign, left[1], right]
+    end
+  end
   binary_operation :relational_expression, :relational_operator, :additive_expression
   binary_operation :additive_expression, :additive_operator, :multiplicative_expression
   binary_operation :multiplicative_expression, :multiplicative_operator, :factor

@@ -2,8 +2,6 @@
 class ParserUtil
 
   class RuleDefineEvalEnv < Object
-    attr_reader :matches
-
     def match *tokens, &block
       @matches ||= {}
       @matches[tokens] = block
@@ -19,10 +17,6 @@ class ParserUtil
       end
       @matched = matched
     end
-
-    def matched
-      @matched
-    end
   end
 
   class << self
@@ -31,10 +25,9 @@ class ParserUtil
     def rule name, **options, &block
       @rules ||= {}
       @rules[name] = RuleDefineEvalEnv.new.instance_eval(&block)
-      #check_left_recursion(name, @rules[name])
     end
 
-    def binary_operation term_name, operator_name, factor_name
+    def binary_operation term_name, operator_name, factor_name, &block
       tail_name = "#{term_name}_tail".to_sym
       rule term_name do
         match factor_name, tail_name do
@@ -44,7 +37,15 @@ class ParserUtil
 
       rule tail_name do |params|
         match operator_name, factor_name, tail_name do
-          ->(n){ instance_variable_get("@#{tail_name}").call [:call, instance_variable_get("@#{operator_name}")[1], [n, instance_variable_get("@#{factor_name}")]] }
+          if block_given?
+            ->(left){
+              operator = instance_variable_get("@#{operator_name}")[1]
+              right = instance_variable_get("@#{factor_name}")
+              instance_variable_get("@#{tail_name}").call(block.call(operator, left, right))
+            }
+          else
+            ->(n){ instance_variable_get("@#{tail_name}").call [:call, instance_variable_get("@#{operator_name}")[1], [n, instance_variable_get("@#{factor_name}")]] }
+          end
         end
 
         match :empty do
@@ -53,9 +54,6 @@ class ParserUtil
       end
     end
 
-    def check_left_recursion(rule_name, rule)
-      p rule.keys.any?{|x| x.first == rule_name}
-    end
   end
 
   def rules
@@ -65,12 +63,8 @@ class ParserUtil
   def parse(tokens)
     @tokens = tokens
     @index = 0
-    result = match_rule @start_rule
-    if @index == @tokens.size
-      result
-    else
-      puts "Warning: not consumming all tokens, may have syntax error"
-      result
+    match_rule(@start_rule).tap do
+      puts "Warning: not consumming all tokens, may have syntax error" if @index < @tokens.size
     end
   end
 
@@ -81,16 +75,12 @@ class ParserUtil
   def match_rule rule_name
     result = false
     rules[rule_name].each do |tokens, block|
-      if result = match_rule_line(*tokens, block)
-        return result
-      end
+      return result if result = match_rule_line(*tokens, block)
     end
-    return false
+    result
   end
 
   def match_rule_line *tokens, block
-    #p "matching #{tokens}"
-    #p "current_token #{@tokens[@index]}"
     old_index = @index
     line_result = tokens.map do |token|
       if rules[token]
