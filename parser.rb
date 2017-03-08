@@ -23,18 +23,16 @@ class Parser < ParserUtil
       []
     end
 
-    match '(', :type, :iden, :formal_params_tail do
-      @formal_params_tail.unshift [@type[1], @iden[1]]
-    end
-  end
-
-  rule :formal_params_tail do
     match ')' do
       []
     end
 
-    match ',', :type, :iden, :formal_params_tail do
-      @formal_params_tail.unshift [@type[1], @iden[1]]
+    match ',', :type, :iden, :formal_params do
+      @formal_params.unshift [@type[1], @iden[1]]
+    end
+
+    match '(', :type, :iden, :formal_params do
+      @formal_params.unshift [@type[1], @iden[1]]
     end
   end
 
@@ -55,18 +53,16 @@ class Parser < ParserUtil
   end
 
   rule :block do
-    match '{', :statement, :block_tail do
-      @block_tail.unshift @statement
-    end
-  end
-
-  rule :block_tail do
     match '}' do
       []
     end
 
-    match :statement, :block_tail do
-      @block_tail.unshift @statement
+    match '{', :statement, :block do
+      @block.unshift @statement
+    end
+
+    match :statement, :block do
+      @block.unshift @statement
     end
   end
 
@@ -104,19 +100,11 @@ class Parser < ParserUtil
     match :assignment_expression do
       @assignment_expression
     end
-
-    match :assignment do
-      @assignment
-    end
   end
 
   rule :factor do
     match '(', :expression, ')' do
       @expression
-    end
-
-    match :number do
-      @number[1]
     end
 
     match :int do
@@ -145,29 +133,28 @@ class Parser < ParserUtil
   end
 
   rule :function_call do
-    match :iden, '(', ')' do
-      [:call, @iden[1], []]
-    end
-
-    match :iden, '(', :actual_params, ')' do
+    match :iden, :actual_params do
       [:call, @iden[1], @actual_params]
     end
   end
 
   rule :actual_params do
-    match :expression, :actual_params_tail do
-      @actual_params_tail.unshift @expression
-    end
-  end
-
-  rule :actual_params_tail do
-    match ',', :expression, :actual_params_tail do
-      @actual_params_tail.unshift @expression
-    end
-
-    match :empty do
+    match '(', ')' do
       []
     end
+
+    match ')' do
+      []
+    end
+
+    match '(', :expression, :actual_params do
+      @actual_params.unshift @expression
+    end
+
+    match ',', :expression, :actual_params do
+      @actual_params.unshift @expression
+    end
+
   end
 
   binary_operation :assignment_expression, :assignment_operator, :relational_expression do |operator, left, right|

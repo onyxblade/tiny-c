@@ -11,10 +11,9 @@ class Interpreter
     end
 
     def call name, arguments
-      #p name, arguments
-
       evaluated = arguments.map{|x| self.eval(x)}
-      if function = Interpreter::BASIC_FUNCTIONS[name]
+
+      if function = Interpreter::PRIMITIVE_FUNCTIONS[name]
         return function.call(*evaluated)
       end
 
@@ -115,13 +114,13 @@ class Interpreter
     end
 
     def inspect
-      "#<Interpreter::Scope::#{object_id} @variables=#{@variables}>"
+      "#<Interpreter::Scope:#{(object_id << 1).to_s(16)} @variables=#{@variables}>"
     end
   end
 
-  BASIC_FUNCTIONS = %w{+ - * / < > <= >= == !=}.map{|x| [x, ->(a, b){a.send(x, b)}] }.to_h
+  PRIMITIVE_FUNCTIONS = %w{+ - * / < > <= >= == !=}.map{|x| [x, ->(a, b){a.send(x, b)}] }.to_h
 
-  def run sexp
+  def interpret sexp
     root_scope = Scope.new
     sexp.each do |function|
       root_scope.eval function

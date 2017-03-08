@@ -63,4 +63,21 @@ class TestParser < Minitest::Test
                  [:return, [:get, "s"]]]]]
     assert_equal target, sexp
   end
+
+  def test_sum
+    code = File.open('sum.c').read
+    tokens = Tokenizer.new.tokenize(code)
+    sexp = Parser.new.parse(tokens)
+    target =  [[:define_func,
+                "int",
+                "sum",
+                [["int", "x"], ["int", "y"]],
+                [[:return, [:call, "+", [[:get, "x"], [:get, "y"]]]]]],
+               [:define_func,
+                "int",
+                "main",
+                [],
+                [[:return, [:call, "sum", [[:int, 2], [:int, 3]]]]]]]
+    assert_equal target, sexp
+  end
 end

@@ -81,6 +81,7 @@ class ParserUtil
   end
 
   def match_rule_line *tokens, block
+    #p "matching #{tokens}, current_token #{@tokens[@index]}"
     old_index = @index
     line_result = tokens.map do |token|
       if rules[token]
@@ -88,6 +89,7 @@ class ParserUtil
         if rule_result
           rule_result
         else
+          @index = old_index
           return false
         end
       elsif token == :empty
