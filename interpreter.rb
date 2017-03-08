@@ -1,4 +1,3 @@
-require './parser'
 
 class Interpreter
 
@@ -103,8 +102,3 @@ class Interpreter
     root_scope.call 'main', []
   end
 end
-
-code = File.open('test/factorial.c').read
-tokens = Tokenizer.new.tokenize(code)
-sexp = Parser.new.parse(tokens)
-p Interpreter.new.run(sexp)

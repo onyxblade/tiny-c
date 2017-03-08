@@ -1,6 +1,4 @@
-require 'pp'
-require './parser_util'
-require './tokenizer'
+require_relative './parser_util'
 
 class Parser < ParserUtil
 
@@ -159,7 +157,3 @@ class Parser < ParserUtil
   binary_operation :multiplicative_expression, :multiplicative_operator, :factor
 
 end
-
-code = File.open('test/factorial.c').read
-tokens = Tokenizer.new.tokenize(code)
-#pp Parser.new.parse(tokens)
