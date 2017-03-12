@@ -90,6 +90,7 @@ class Compiler
     def int n
       "$#{n}"
     end
+    alias :long :int
 
     def inc name
       @asm.puts "incq #{get name}"
