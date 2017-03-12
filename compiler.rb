@@ -40,9 +40,10 @@ class Compiler
       a = analyze a
       @asm.puts "push #{a}"
       b = analyze b
-      @asm.puts "mov #{b}, %rdx"
+      @asm.puts "mov #{b}, %rcx"
       @asm.puts "pop %rax"
-      @asm.puts "idiv %rdx, %rax"
+      @asm.puts "cltd"
+      @asm.puts "idiv %rcx"
       "%rax"
     end
   end
