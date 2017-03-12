@@ -55,7 +55,7 @@ class Interpreter
       throw :return, result
     end
 
-    def if condition, then_body, else_body
+    def if condition, then_body, else_body = []
       evaluated = self.eval condition
       if evaluated && evaluated != 0
         then_body.each{|x| self.eval x }
