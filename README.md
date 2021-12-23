@@ -1,4 +1,13 @@
-#tiny-c
+# tiny-c
+
+Please check test cases for the usage and supported syntax of this demo. 
+
+I implemented a DSL to generate a parser. It uses DFS to search for sytax rule matches, which allows the definition to be simple but cannot display error messages like "unexpected token xxx".
+
+Only `long` is supported, and `int`s are processed as `long`s. 
+
+
+## 中文说明
 
 用法参照测试用例，测试用例以外的应该都不支持。。
 
